@@ -27,4 +27,6 @@ class Feed extends AppModel {
             'length' => 255
         )
     );
+
+    //TODO add validation
 }
