@@ -3,16 +3,32 @@
 class RssShell extends AppShell {
     public $uses = array('Feed', 'Item');
 
-    public function update() {
+
+    //Runs when command is called
+    public function main() {
+        $url = array_key_exists(0, $this->args) ? $this->args[0] : null;
+        $category = array_key_exists(1, $this->args) ? $this->args[1] : 'default';
+
+        if (!$url){
+            $this->out('<warning>No URL given. Updating existing feeds</warning>');
+            $this->updateAllFeeds();
+            return;
+        }
+
+        $this->saveFeed($url, $category);
 
     }
 
+    private function updateAllFeeds() {
+        $feeds = $this->Feed->find('all');
+        $this->out('Current feeds (' . count($feeds) . '): ');
+        foreach ($feeds as $feed) {
+            $this->saveFeed($feed['Feed']['url'], $feed['Feed']['category']);
+        }
+    }
 
-    public function add() {
-        $url = $this->args[0];
-        $category = $this->args[1];
-
-        $this->params;
+    //Save or update feed
+    private function saveFeed($url, $category) {
         $rss = new SimpleXMLElement(file_get_contents($url));
 
         $newFeedData = array(
@@ -35,7 +51,7 @@ class RssShell extends AppShell {
 
 
 
-        if (empty($feed)) {
+        if (empty($feed)) { // New feed
             $this->Feed->create();
             $newFeed = $this->Feed->save($newFeedData);
             $items = $this->getItems($rss, $this->Feed->id);
@@ -43,10 +59,9 @@ class RssShell extends AppShell {
                 $this->Feed->Items->saveMany($items);
             }
             $this->out('Saved feed with ' . count($items) . ' items.');
-        } else {
+        } else { //feed already exists
             //Check if feed has been updated
             if ($feed['Feed']['last_update'] < $newFeedData['last_update']) {
-                $this->out($feed['Feed']['last_update'] . '<' . $newFeedData['last_update']);
                 $items = $this->getItems($rss, $feed['Feed']['id']);
                 $this->Feed->set(array(
                     'id' => $feed['Feed']['id'],
@@ -59,22 +74,9 @@ class RssShell extends AppShell {
                 $this->out('No new entries.');
             }
         }
-
     }
 
-    public function listFeeds($feeds = null) {
-        $feeds = $feeds ? $feeds : $this->Feed->find('all');
-        $this->out('Current feeds (' . count($feeds) . '): ');
-        foreach ($feeds as $feed) {
-            $this->out('Title: ' . $feed['Feed']['title']);
-            $this->out('URL: ' . $feed['Feed']['url']);
-            $this->out('Updated: ' . $feed['Feed']['last_update']);
-            $this->out('Category: ' . $feed['Feed']['category']);
-            $this->out('Items: ' . count($feed['Items']) );
-            $this->out();
-        }
-    }
-
+    //Get feed entries
     private function getItems($xmlObject, $feedId) {
         $items = array();
         foreach ($xmlObject->channel->item as $item) {
@@ -92,11 +94,16 @@ class RssShell extends AppShell {
         return $items;
     }
 
+    //Command help config
     public function getOptionParser() {
         $parser = parent::getOptionParser();
         $parser->addArguments(array(
             'url' => array('help' => 'RSS feed url'),
             'category' => array('help' => 'RSS feed category')
+        ));
+        $parser->description(array(
+            'Command used for adding/updating RSS feeds',
+            'Run with no arguments to update all feeds'
         ));
         return $parser;
     }
