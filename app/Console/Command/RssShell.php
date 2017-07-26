@@ -35,50 +35,55 @@ class RssShell extends AppShell {
 
     //Save or update feed
     private function saveFeed($url, $category) {
-        $rss = new SimpleXMLElement(file_get_contents($url));
+        try {
+            $rss = new SimpleXMLElement(file_get_contents($url));
 
-        $newFeedData = array(
-            'url' => $url,
-            'title' => $rss->channel->title[0],
-            'last_update' => DateTime::createFromFormat(
-                'D, j M Y G:i:s O',
-                $rss->channel->lastBuildDate)
-                ->format('Y-m-d H:i:s'),
-            'category' => $category
-        );
+            $newFeedData = array(
+                'url' => $url,
+                'title' => $rss->channel->title[0],
+                'last_update' => DateTime::createFromFormat(
+                    'D, j M Y G:i:s O',
+                    $rss->channel->lastBuildDate)
+                    ->format('Y-m-d H:i:s'),
+                'category' => $category
+            );
 
-        $feed = $this->Feed->find('first', array(
-            'conditions' => array(
-                'Feed.url' => $newFeedData['url'],
-                'Feed.title' => $newFeedData['title'],
-                'Feed.category' => $newFeedData['category'],
-            )
-        ));
+            $feed = $this->Feed->find('first', array(
+                'conditions' => array(
+                    'Feed.url' => $newFeedData['url'],
+                    'Feed.title' => $newFeedData['title'],
+                    'Feed.category' => $newFeedData['category'],
+                )
+            ));
 
 
 
-        if (empty($feed)) { // New feed
-            $this->Feed->create();
-            $newFeed = $this->Feed->save($newFeedData);
-            $items = $this->getItems($rss, $this->Feed->id);
-            if (!empty($newFeed)) {
-                $this->Feed->Items->saveMany($items);
+            if (empty($feed)) { // New feed
+                $this->Feed->create();
+                $newFeed = $this->Feed->save($newFeedData);
+                $items = $this->getItems($rss, $this->Feed->id);
+                if (!empty($newFeed)) {
+                    $this->Feed->Items->saveMany($items);
+                }
+                $this->out('Saved feed with ' . count($items) . ' items.');
+            } else { //feed already exists
+                //Check if feed has been updated
+                if ($feed['Feed']['last_update'] < $newFeedData['last_update']) {
+                    $items = $this->getItems($rss, $feed['Feed']['id']);
+                    $this->Feed->set(array(
+                        'id' => $feed['Feed']['id'],
+                        'last_update' => $newFeedData['last_update']
+                    ));
+                    $this->Feed->save();
+                    $this->Feed->Items->saveMany($items);
+                    $this->out('Updated feed with ' . count($items) . ' items.');
+                } else {
+                    $this->out('No new entries.');
+                }
             }
-            $this->out('Saved feed with ' . count($items) . ' items.');
-        } else { //feed already exists
-            //Check if feed has been updated
-            if ($feed['Feed']['last_update'] < $newFeedData['last_update']) {
-                $items = $this->getItems($rss, $feed['Feed']['id']);
-                $this->Feed->set(array(
-                    'id' => $feed['Feed']['id'],
-                    'last_update' => $newFeedData['last_update']
-                ));
-                $this->Feed->save();
-                $this->Feed->Items->saveMany($items);
-                $this->out('Updated feed with ' . count($items) . ' items.');
-            } else {
-                $this->out('No new entries.');
-            }
+        } catch (Exception $exc) {
+            $this->out('<error>Unexpected error happened. Try changing variables or try again later.</error>');
+            $this->out('<warning>' . $exc->getMessage() . '</warning>', 1, Shell::VERBOSE);
         }
     }
 
