@@ -13,5 +13,9 @@ class FeedsController extends AppController {
             $this->set('feeds', $this->Feed->find('all'));
         }
 
+        $this->set('categories', array_unique($this->Feed->find('list', array(
+            'fields' => array('Feed.category')
+        ))));
+
     }
 }

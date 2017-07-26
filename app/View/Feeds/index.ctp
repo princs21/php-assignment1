@@ -1,4 +1,10 @@
-<h1>Feeds</h1>
+<div>
+<?php foreach ($categories as $category): ?>
+    <a href="<?php echo '/?category=' . $category; ?>">
+        <?php echo $category ?>
+    </a>
+<?php endforeach; ?>
+</div>
 <table>
     <tr>
         <th>Title</th>
