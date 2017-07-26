@@ -15,6 +15,12 @@ class RssShell extends AppShell {
             return;
         }
 
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            $this->out('<error>First argument is not a valid URL.</error>');
+            $this->out('<warning>Usage: php app/Console/cake.php [rss_url] [category]</warning>');
+            return;
+        }
+
         $this->saveFeed($url, $category);
 
     }

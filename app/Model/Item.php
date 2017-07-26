@@ -20,6 +20,4 @@ class Item extends AppModel {
             'type' => 'datetime'
         )
     );
-
-    //TODO add validation
 }
