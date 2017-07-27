@@ -15,3 +15,6 @@
    
 3. Feeds can be viewed by accessing localhost/feeds?category=<insert category here>
     example: localhost/feeds?category=news
+    
+    
+Designed for RSS version 2.0
