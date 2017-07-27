@@ -1,26 +1,37 @@
 <div>
-<?php foreach ($categories as $category): ?>
-    <a href="<?php echo '/?category=' . $category; ?>">
-        <?php echo $category ?>
+<?php foreach ($categories as $cat): ?>
+    <a href="<?php echo '/?category=' . $cat; ?>">
+        <?php echo $cat ?>
     </a>
 <?php endforeach; ?>
 </div>
 <table>
     <tr>
         <th>Title</th>
-        <th>Description</th>
-        <th>Published</th>
+        <?php if(!isset($category)): ?>
+            <th>Category</th>
+        <?php endif; ?>
+        <th>Updated</th>
+        <th>Articles Count</th>
+        <th>Recent Article</th>
     </tr>
 
     <?php foreach ($feeds as $feed): ?>
-        <?php foreach ($feed['Items'] as $item): ?>
         <tr>
-            <td><a href="<?php echo $item['link']; ?>"><?php echo $item['title']; ?></a></td>
-            <td><?php echo $item['description']; ?></td>
-            <td><?php echo $item['published']; ?></td>
+            <td><a href="<?php echo $feed['Feed']['url']; ?>"><?php echo $feed['Feed']['title']; ?></a></td>
+            <?php if(!isset($category)): ?>
+                <td><?php echo $feed['Feed']['category']; ?></td>
+            <?php endif; ?>
+            <td><?php echo $feed['Feed']['last_update']; ?></td>
+            <td><?php echo count($feed['Items']) ?></td>
+            <td>
+                <?php if (array_key_exists('recentArticle', $feed['Feed'])): ?>
+                    <a href="<?php echo $feed['Feed']['recentArticle']['link'] ?>">
+                        <?php echo $feed['Feed']['recentArticle']['title'] ?>
+                    </a>
+                <?php endif; ?>
+            </td>
         </tr>
-        <?php endforeach; ?>
-        <?php unset($item); ?>
     <?php endforeach; ?>
     <?php unset($feed); ?>
 </table>
